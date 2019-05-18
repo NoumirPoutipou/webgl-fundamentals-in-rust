@@ -80,9 +80,7 @@ fn resize_canvas_to_display_size(canvas: &mut CanvasElement) {
 }
 
 fn main() {
-    console!(log, "meuh 1");
     stdweb::initialize();
-    console!(log, "meuh 2");
 
     let vert_code = r#"
         // an attribute will receive data from a buffer
@@ -106,7 +104,6 @@ fn main() {
             gl_FragColor = vec4(1, 0, 0.5, 1); // return redish-purple
         }"#;
 
-    console!(log, "meuh 3");
     // Get A WebGL context
     let mut canvas: CanvasElement = document()
         .query_selector("#canvas")
@@ -114,27 +111,20 @@ fn main() {
         .unwrap()
         .try_into()
         .unwrap();
-    console!(log, "meuh 4");
     let context: gl = canvas.get_context().unwrap();
-    console!(log, "meuh 5");
 
     // create GLSL shaders, upload the GLSL source, compile the shaders
     let vertex_shader = create_shader(&context, gl::VERTEX_SHADER, vert_code).unwrap();
-    console!(log, "meuh 6");
     let fragment_shader = create_shader(&context, gl::FRAGMENT_SHADER, frag_code).unwrap();
-    console!(log, "meuh 7");
 
     // Link the two shaders into a program
     let program = create_program(&context, &vertex_shader, &fragment_shader).unwrap();
-    console!(log, "meuh 8");
 
     // look up where the vertex data needs to go.
     let position_attribute_location = context.get_attrib_location(&program, "a_position") as u32;
-    console!(log, "meuh 9");
 
     // Create a buffer and put three 2d clip space points in it
     let position_buffer = context.create_buffer().unwrap();
-    console!(log, "meuh 10");
 
     // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
     context.bind_buffer(gl::ARRAY_BUFFER, Some(&position_buffer));
