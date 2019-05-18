@@ -83,14 +83,20 @@ fn main() {
     stdweb::initialize();
 
     let vert_code = r#"
-        // an attribute will receive data from a buffer
-        attribute vec4 a_position;
+        attribute vec2 a_position;
+        uniform vec2 u_resolution;
 
-        // all shaders have a main function
         void main() {
-            // gl_Position is a special variable a vertex shader
-            // is responsible for setting
-            gl_Position = a_position;
+            // convert the position from pixels to 0.0 to 1.0
+            vec2 zeroToOne = a_position / u_resolution;
+
+            // convert from 0->1 to 0->2
+            vec2 zeroToTwo = zeroToOne * 2.0;
+
+            // convert from 0->2 to -1->+1 (clipspace)
+            vec2 clipSpace = zeroToTwo - 1.0;
+
+            gl_Position = vec4(clipSpace, 0, 1);
         }"#;
 
     let frag_code = r#"
@@ -122,6 +128,10 @@ fn main() {
 
     // look up where the vertex data needs to go.
     let position_attribute_location = context.get_attrib_location(&program, "a_position") as u32;
+    // look up uniform locations
+    let resolution_uniform_location = context
+        .get_uniform_location(&program, "u_resolution")
+        .unwrap();
 
     // Create a buffer and put three 2d clip space points in it
     let position_buffer = context.create_buffer().unwrap();
@@ -131,9 +141,14 @@ fn main() {
 
     let positions = TypedArray::<f32>::from(
         &[
-            0.0, 0.0, // 1st point
-            0.0, 0.5, // 2nd point
-            0.7, 0.0, // 3rd point
+            // 1st triangle
+            10.0, 20.0, // 1st point
+            80.0, 20.0, // 2nd point
+            10.0, 30.0, // 3rd point
+            // 2nd triangle
+            10.0, 30.0, // 1st point
+            80.0, 20.0, // 2nd point
+            80.0, 30.0, // 3rd point
         ][..],
     )
     .buffer();
@@ -177,10 +192,17 @@ fn main() {
         offset,
     );
 
+    // set the resolution
+    context.uniform2f(
+        Some(&resolution_uniform_location),
+        canvas.width() as f32,
+        canvas.height() as f32,
+    );
+
     // draw
     let primitive_type = gl::TRIANGLES;
     let offset = 0;
-    let count = 3;
+    let count = 6;
     context.draw_arrays(primitive_type, offset, count);
 
     stdweb::event_loop();
