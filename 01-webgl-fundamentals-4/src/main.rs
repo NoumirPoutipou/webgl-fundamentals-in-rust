@@ -13,6 +13,8 @@ use stdweb::web::{document, IParentNode, TypedArray};
 use stdweb::web::html_element::CanvasElement;
 use webgl_rendering_context::{GLenum, WebGLProgram, WebGLRenderingContext as gl, WebGLShader};
 
+use rand::Rng;
+
 fn create_shader(context: &gl, type_: GLenum, source: &'static str) -> Option<WebGLShader> {
     let shader = context.create_shader(type_).unwrap();
     context.shader_source(&shader, source);
@@ -79,6 +81,30 @@ fn resize_canvas_to_display_size(canvas: &mut CanvasElement) {
     }
 }
 
+// Fill the buffer with the values that define a rectangle.
+fn set_rectangle(context: &gl, x: u32, y: u32, width: u32, height: u32) {
+    let x1 = x as f32;
+    let x2 = x1 + width as f32;
+    let y1 = y as f32;
+    let y2 = y1 + height as f32;
+
+    let positions = TypedArray::<f32>::from(
+        &[
+            // 1st triangle
+            x1, y1, // 1st point
+            x2, y1, // 2nd point
+            x1, y2, // 3rd point
+            // 2nd triangle
+            x1, y2, // 1st point
+            x2, y1, // 2nd point
+            x2, y2, // 3rd point
+        ][..],
+    )
+    .buffer();
+
+    context.buffer_data_1(gl::ARRAY_BUFFER, Some(&positions), gl::STATIC_DRAW);
+}
+
 fn main() {
     stdweb::initialize();
 
@@ -100,14 +126,11 @@ fn main() {
         }"#;
 
     let frag_code = r#"
-        // fragment shaders don't have a default precision so we need
-        // to pick one. mediump is a good default
         precision mediump float;
+        uniform vec4 u_color;
 
         void main() {
-            // gl_FragColor is a special variable a fragment shader
-            // is responsible for setting
-            gl_FragColor = vec4(1, 0, 0.5, 1); // return redish-purple
+            gl_FragColor = u_color;
         }"#;
 
     // Get A WebGL context
@@ -132,28 +155,13 @@ fn main() {
     let resolution_uniform_location = context
         .get_uniform_location(&program, "u_resolution")
         .unwrap();
+    let color_uniform_location = context.get_uniform_location(&program, "u_color").unwrap();
 
     // Create a buffer and put three 2d clip space points in it
     let position_buffer = context.create_buffer().unwrap();
 
     // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
     context.bind_buffer(gl::ARRAY_BUFFER, Some(&position_buffer));
-
-    let positions = TypedArray::<f32>::from(
-        &[
-            // 1st triangle
-            10.0, 20.0, // 1st point
-            80.0, 20.0, // 2nd point
-            10.0, 30.0, // 3rd point
-            // 2nd triangle
-            10.0, 30.0, // 1st point
-            80.0, 20.0, // 2nd point
-            80.0, 30.0, // 3rd point
-        ][..],
-    )
-    .buffer();
-
-    context.buffer_data_1(gl::ARRAY_BUFFER, Some(&positions), gl::STATIC_DRAW);
 
     // code above this line is initialization code.
     // code below this line is rendering code.
@@ -199,11 +207,37 @@ fn main() {
         canvas.height() as f32,
     );
 
-    // draw
-    let primitive_type = gl::TRIANGLES;
-    let offset = 0;
-    let count = 6;
-    context.draw_arrays(primitive_type, offset, count);
+    // random generator
+    let mut rng = rand::thread_rng();
+
+    // draw 50 random rectangles in random colors
+    for _ in 0..50 {
+        // Setup a random rectangle
+        // This will write to positionBuffer because
+        // its the last thing we bound on the ARRAY_BUFFER
+        // bind point
+        set_rectangle(
+            &context,
+            rng.gen_range(0, 300),
+            rng.gen_range(0, 300),
+            rng.gen_range(0, 300),
+            rng.gen_range(0, 300),
+        );
+
+        // Set a random color.
+        context.uniform4f(
+            Some(&color_uniform_location),
+            rng.gen::<f32>(),
+            rng.gen::<f32>(),
+            rng.gen::<f32>(),
+            1.0,
+        );
+
+        let primitive_type = gl::TRIANGLES;
+        let offset = 0;
+        let count = 6;
+        context.draw_arrays(primitive_type, offset, count);
+    }
 
     stdweb::event_loop();
 }

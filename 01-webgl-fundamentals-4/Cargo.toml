@@ -10,5 +10,10 @@ stdweb-derive = "0.5.1"
 serde = "1.0.91"
 serde_derive = "1.0.91"
 
+[dependencies.rand]
+version = "0.6.5"
+default-features = false
+features = ["stdweb"]
+
 [build-dependencies]
 webgl_generator = "0.2.0"
