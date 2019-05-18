@@ -1,0 +1,23 @@
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+  user-select: none;
+  overflow: hidden;
+  margin: 0px;
+  padding: 0px;
+}
+
+body {
+  background-color: #aaa;
+  font-family: Sans-Serif;
+}
+
+canvas {
+  background-color: #fff;
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
