@@ -1,0 +1,2 @@
+[workspace]
+members = ["01-webgl-fundamentals-1", "01-webgl-fundamentals-2", "01-webgl-fundamentals-3", "01-webgl-fundamentals-4"]
